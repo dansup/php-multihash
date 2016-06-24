@@ -1,0 +1,14 @@
+{
+    "name": "dansup/php-multihash",
+    "description": "",
+    "license": "Apache-2.0",
+    "require": {
+        "php" : "~5.5|~7.0",
+        "stephenhill/base58": "~1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dansup\\Multihash\\": "src/"
+        }
+    }
+}
