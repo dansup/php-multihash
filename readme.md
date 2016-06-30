@@ -22,7 +22,8 @@ $ composer require dansup/php-multihash
 
 ``` php
 $multihash = new Dansup\Multihash\Factory;
-echo $multihash->encode('testing', 0x11)->get();
+echo $multihash->encode('testing', 0x12)->get();
+=> "QmcJf1w9bVpquGdzCp86pX4K21Zcn7bJBUtrBP1cr2NFuR"
 ```
 
 ## License
