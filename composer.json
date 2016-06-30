@@ -1,7 +1,8 @@
 {
     "name": "dansup/php-multihash",
-    "description": "",
-    "license": "Apache-2.0",
+    "description": "multihash implementation in php",
+    "keywords": ["ipfs", "multihash", "hash"],
+    "license": "MIT",
     "require": {
         "php" : "~5.5|~7.0",
         "stephenhill/base58": "~1.0"
