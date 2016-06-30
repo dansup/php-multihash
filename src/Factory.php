@@ -2,9 +2,16 @@
 
 namespace Dansup\Multihash;
 
-use \StephenHill\Base58;
+use StephenHill\Base58;
 
-class Hasher {
+class Factory {
+
+  private $digest;
+
+  function __construct()
+  {
+    $this->digest = "";
+  }
 
   function names() {
     return [
@@ -29,6 +36,18 @@ class Hasher {
     ];
   }
 
+  function modes()
+  {
+    return [
+    0x11 => 'sha1',
+    0x12 => 'sha256',
+    0x13 => 'sha512',
+    0x14 => 'sha3',
+    0x40 => 'blake2b',
+    0x41 => 'blake2s'
+    ];
+  }
+
   function defaultLengths() {
     return [
     0x11 => 20,
@@ -40,42 +59,62 @@ class Hasher {
     ];
   }
 
-  function toHexString ($m) {
-    return bin2hex($m);
+  public function get()
+  {
+    return $this->toBase58String();
   }
 
-  function fromHexString ($s) {
-    return hex2bin($s);
+  public function getRaw()
+  {
+    return $this->digest;
   }
 
-  function toB58String ($m) {
-    return (new Base58())->encode($m);
+  public function toHexString() {
+    return bin2hex($this->digest);
   }
 
-  function fromB58String ($s) {
-    return (new Base58())->decode($s);
+  public function fromHexString() {
+    return hex2bin($this->digest);
+  }
+
+  public function toBase58String() {
+    return (new Base58())->encode($this->digest);
+  }
+
+  public function fromBase58String() {
+    return (new Base58())->decode($this->digest);
+  }
+
+  public function toBase64String()
+  {
+    return base64_encode($this->digest);
+  }
+
+  public function fromBase64String()
+  {
+    return base64_decode($this->digest);
   }
 
 // Decode a hash from the given Multihash.
-  function decode ($buf) {
-
-    return [
-    'code'  => $buf[0],
-    'name'  =>  $this->codes()[$buf[0]],
-    'length'  => strlen($buf[1]),
-    'digest'  => $buf[2]
-    ];
+  public function decode ($buf) {
+    $res = unpack("Cinteger/Clength/A*digest", $buf);
+    $hash['code'] = $res['integer'];
+    $hash['hash_function'] = $this->codes()[$res['integer']];
+    $hash['length'] = $res['length'];
+    $hash['digest'] = $res['digest'];
+    $this->digest = $hash;
+    return $this;
   }
 
 // Encode a hash digest along with the specified function code.
 // Note: the length is derived from the length of the digest itself.
-  function encode ($digest = null, $code = null, $length = null) {
+  public function encode ($digest = null, $code = null, $length = null) {
     if ($digest == null || $code == null) {
       throw new \Exception('multihash encode requires at least two args: digest, code');
     }
 
   // ensure it's a hashfunction code.
-  //$this->coerceCode($code);
+    $this->coerceCode($code);
 
     if ($length == null) {
       $length = strlen($digest);
@@ -88,51 +127,39 @@ class Hasher {
     if ($length > 127) {
       throw new \Exception('multihash does not yet support digest lengths greater than 127 bytes.');
     }
-    $encoded = $this->doEncode($digest, $code);
-    return $encoded;
+    $this->digest = $this->doEncode($digest, $code);
+    return $this;
   }
 
-  function doEncode($digest, $code)
+  private function doEncode($digest, $code)
   {
     $enc = false;
-    switch ($digest) {
-      case 'sha1':
-      $enc = hash('sha1', $code);
-      break;
-      case 'sha2-256':
-      $enc = hash('sha256', $code);
-      break;
-      case 'sha2-512':
-      $enc = hash('sha512', $code);
-      break;
-      
-    }
-    if($enc == false) {
-      throw new \Exception('invalid digest');
-    }
+    $mode = $this->modes()[$code];
+    $key = $this->codes()[$code];
+    $hashed = hash($mode, $digest, true);
+    $length = strlen($hashed);
+    $enc = pack("CCA*", $code, $length, $hashed);
     return $enc;
   }
 
 // Converts a hashfn name into the matching code
-  function coerceCode ($name) {
-    $code = $name;
+  private function coerceCode ($name) {
 
-    $code = $this->names()[$name];
+    $mode = $this->modes()[$name];
 
-    if ( is_int($code) == false) {
+    if ( is_int($name) == false) {
       throw new \Exception("Hash function code should be a number. Got: {$code}");
     }
 
-    if ($this->codes()[$code] == false && $this->isAppCode($code) == false) {
-      throw new \Exception("Unrecognized function code: {$code}");
+    if ($mode == false OR $this->isAppCode($name) == false) {
+      throw new \Exception("Unrecognized function code: {$name}");
     }
-
-    return $code;
+    return;
   }
 
 // Checks wether a code is part of the app range
-  function appCode ($code) {
-    return ($code > 0 && $code < 0x10);
+  function isAppCode($code) {
+    return ($code > 0 && $code < 0x41);
   }
 
 // Checks whether a multihash code is valid.
@@ -161,11 +188,11 @@ class Hasher {
     $code = $multihash[0];
 
     if ($this->isValidCode($code) === false) {
-      throw new \Exception(`multihash unknown function code: 0x${code.toString(16)}`);
+      throw new \Exception('multihash unknown function code');
     }
 
     if (substr($multihash[2]) !== multihash[1]) {
-      throw new \Exception(`multihash length inconsistent: 0x${multihash.toString('hex')}`);
+      throw new \Exception('multihash length inconsistent');
     }
   }
 }
