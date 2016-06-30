@@ -4,7 +4,7 @@ php-multihash
 > [multihash](//github.com/jbenet/multihash) implementation.
 
 
-An IPFS Multihash PHP library. Still in active development, only of a few hash types are supported (sha1, sha256), we plan to support [all](https://github.com/jbenet/multihash/blob/master/hashtable.csv) hash types listed in the spec eventually.
+An IPFS Multihash PHP library. **Still in active development**, only of a few hash types are supported (sha1, sha256), we plan to support [all](https://github.com/jbenet/multihash/blob/master/hashtable.csv) hash types listed in the spec eventually.
 
 ## Install
 
