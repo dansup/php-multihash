@@ -2,6 +2,7 @@
 
 namespace Dansup\Multihash;
 
+use Base32\Base32;
 use StephenHill\Base58;
 
 class Factory {
@@ -69,12 +70,24 @@ class Factory {
     return $this->digest;
   }
 
-  public function toHexString() {
+  public function toHexString()
+  {
     return bin2hex($this->digest);
   }
 
-  public function fromHexString() {
+  public function fromHexString()
+  {
     return hex2bin($this->digest);
+  }
+
+  public function toBase32String()
+  {
+    return Base32::encode($this->digest);
+  }
+
+  public function fromBase32String()
+  {
+    return Base32::decode($this->digest);
   }
 
   public function toBase58String() {
@@ -96,14 +109,15 @@ class Factory {
   }
 
 // Decode a hash from the given Multihash.
-  public function decode ($buf) {
+  public function decode ($buffer) {
+    $this->digest = $buffer;
+    $buf = $this->fromBase58String();
     $res = unpack("Cinteger/Clength/A*digest", $buf);
     $hash['code'] = $res['integer'];
     $hash['hash_function'] = $this->codes()[$res['integer']];
     $hash['length'] = $res['length'];
     $hash['digest'] = $res['digest'];
-    $this->digest = $hash;
-    return $this;
+    return $hash;
   }
 
 // Encode a hash digest along with the specified function code.
